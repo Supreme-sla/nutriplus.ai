@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriScan AI - Nutrition Intelligence Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .scan-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .camera-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        #camera-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .product-header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: start;
+        }
+
+        .product-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .product-info h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .product-info p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .nutriscore {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .nutriscore-a { background: #038141; }
+        .nutriscore-b { background: #85BB2F; }
+        .nutriscore-c { background: #FECB02; color: #333; }
+        .nutriscore-d { background: #EE8100; }
+        .nutriscore-e { background: #E63E11; }
+
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .nutrition-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .nutrition-item h3 {
+            color: #333;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .nutrition-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .daily-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.high {
+            background: linear-gradient(90deg, #f5576c 0%, #f093fb 100%);
+        }
+
+        .daily-percent {
+            font-weight: bold;
+            color: #666;
+            min-width: 50px;
+        }
+
+        .ingredients {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .ingredients h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .ingredients p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .sample-barcodes {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .sample-barcodes h4 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .sample-barcodes p {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .sample-barcodes p:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🥗 NutriScan AI</h1>
+            <p>Scan. Analyze. Eat Smart.</p>
+        </div>
+
+        <div class="scan-section">
+            <div class="input-group">
+                <input type="text" id="barcode-input" placeholder="Enter barcode number or scan using camera">
+                <button onclick="scanBarcode()">🔍 Scan</button>
+                <button class="camera-btn" onclick="toggleCamera()">📷 Camera</button>
+            </div>
+
+            <div id="camera-container">
+                <video id="video" autoplay></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="sample-barcodes">
+                <h4>Try these sample barcodes:</h4>
+                <p onclick="testBarcode('3017620422003')">🍫 Nutella - 3017620422003</p>
+                <p onclick="testBarcode('5000112548891')">🍪 Oreo - 5000112548891</p>
+                <p onclick="testBarcode('0016000275287')">🥤 Coca-Cola - 0016000275287</p>
+                <p onclick="testBarcode('3228857000852')">🧀 Kiri Cheese - 3228857000852</p>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Analyzing product...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        let stream = null;
+        let scanning = false;
+
+        function testBarcode(code) {
+            document.getElementById('barcode-input').value = code;
+            scanBarcode();
+        }
+
+        async function scanBarcode() {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            
+            if (!barcode) {
+                showError('Please enter a barcode number');
+                return;
+            }
+
+            hideError();
+            showLoading(true);
+            hideResults();
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ barcode: barcode })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Product not found');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let nutritionHtml = '';
+            const nutrition = data.nutrition;
+            
+            for (const [key, value] of Object.entries(nutrition)) {
+                const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const percent = value.daily_value_percent;
+                const isHigh = percent > 50;
+                
+                nutritionHtml += `
+                    <div class="nutrition-item">
+                        <h3>${displayName}</h3>
+                        <div class="nutrition-value">${value.per_100g} ${value.unit}</div>
+                        <div class="daily-value">
+                            <div class="progress-bar">
+                                <div class="progress-fill ${isHigh ? 'high' : ''}" style="width: ${Math.min(percent, 100)}%"></div>
+                            </div>
+                            <span class="daily-percent">${percent}%</span>
+                        </div>
+                        <small style="color: #999;">per 100g / Daily Value</small>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="product-header">
+                    ${data.image_url ? `<img src="${data.image_url}" class="product-image" alt="${data.product_name}">` : ''}
+                    <div class="product-info">
+                        <h2>${data.product_name}</h2>
+                        <p><strong>Brand:</strong> ${data.brands}</p>
+                        <p><strong>Category:</strong> ${data.categories}</p>
+                        <p><strong>Serving Size:</strong> ${data.serving_size}</p>
+                        ${data.nutriscore_grade !== 'N/A' ? `<span class="nutriscore nutriscore-${data.nutriscore_grade.toLowerCase()}">Nutri-Score: ${data.nutriscore_grade}</span>` : ''}
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 15px; color: #333;">Nutritional Information</h3>
+                <div class="nutrition-grid">
+                    ${nutritionHtml}
+                </div>
+
+                <div class="ingredients">
+                    <h3>Ingredients</h3>
+                    <p>${data.ingredients_text || 'No ingredients information available'}</p>
+                </div>
+
+                <p style="margin-top: 20px; color: #999; font-size: 0.9em;">
+                    Barcode: ${data.barcode} | Scanned: ${data.scanned_at}
+                </p>
+            `;
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+
+        async function toggleCamera() {
+            const container = document.getElementById('camera-container');
+            const video = document.getElementById('video');
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                container.style.display = 'none';
+                scanning = false;
+                return;
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                video.srcObject = stream;
+                container.style.display = 'block';
+                scanning = true;
+                requestAnimationFrame(scanFrame);
+            } catch (error) {
+                showError('Camera access denied or not available');
+            }
+        }
+
+        function scanFrame() {
+            if (!scanning) return;
+
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    document.getElementById('barcode-input').value = code.data;
+                    toggleCamera();
+                    scanBarcode();
+                    return;
+                }
+            }
+
+            requestAnimationFrame(scanFrame);
+        }
+
+        // Allow Enter key to scan
+        document.getElementById('barcode-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') scanBarcode();
+        });
+    </script>
+</body>
+</html>
